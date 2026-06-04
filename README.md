@@ -6,10 +6,36 @@ Turns raw customer emails into validated, structured triage records for automati
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env          # add your ANTHROPIC_API_KEY
-python process_dataset.py     # → results.jsonl
+cp .env.example .env          # add your ANTHROPIC_API_KEY (optionally set LLM_MODEL)
+python process_dataset.py     # emails.jsonl → results.jsonl
 python run_eval.py            # → scored metrics
 ```
+
+Both scripts take optional flags:
+
+```bash
+python process_dataset.py --input inbox.jsonl --output out.jsonl
+python run_eval.py --results out.jsonl
+```
+
+## Wiring in your own LLM provider
+
+The LLM call sits behind a one-method interface (`triage/llm.py`), so nothing
+about the triage logic is tied to Anthropic. To use a different provider/model:
+
+```python
+from triage import extract, LLMBackend
+
+class MyBackend:                      # satisfies the LLMBackend protocol
+    def extract_tool_call(self, system: str, user: str, tool: dict) -> dict:
+        # call your model, return a dict matching tool["input_schema"]
+        ...
+
+record = extract(email_text, backend=MyBackend())
+```
+
+The default `AnthropicBackend` reads the model from the `LLM_MODEL` env var
+(default `claude-sonnet-4-6`) — no model name is hardcoded in the logic.
 
 ## Design decisions
 
@@ -52,7 +78,8 @@ Primary intent wins (`refund`). Voltage question goes into `requested_action` as
 | Sentiment accuracy | Detects sarcasm, affect routing |
 | Order ID accuracy | Entity extraction correctness |
 | requires_human precision/recall | **Recall matters most** — a missed escalation is worse than a false one |
-| Overall | Macro average of the above for a single headline number |
+| Confidence calibration | Avg self-reported confidence on correct vs. wrong intents — should be higher when correct |
+| Overall | Macro average of intent/urgency/sentiment accuracy + requires_human F1 |
 
 ## What I'd do with another day
 
