@@ -1,8 +1,14 @@
 from __future__ import annotations
+import os
+from pathlib import Path
 import anthropic
+from dotenv import load_dotenv
 from .schema import TriageRecord
 
-_client = anthropic.Anthropic()
+# Load .env from project root if present
+load_dotenv(Path(__file__).parent.parent / ".env")
+
+_client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
 # Field semantics documented here — these are our choices where the schema is underspecified:
 #   intent       — primary intent when multiple exist; secondary goes in requested_action
