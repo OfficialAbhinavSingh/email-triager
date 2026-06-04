@@ -19,6 +19,9 @@ def score(predictions: list[dict], labels: list[dict]) -> dict[str, Any]:
     order_correct = order_total = 0
 
     rh_tp = rh_fp = rh_fn = rh_tn = 0
+    # confidence calibration: average reported confidence when intent is right vs. wrong
+    conf_correct: list[float] = []
+    conf_wrong: list[float] = []
     per_email: list[dict] = []
 
     for pred, label in zip(predictions, labels):
@@ -27,6 +30,10 @@ def score(predictions: list[dict], labels: list[dict]) -> dict[str, Any]:
         s_match = pred["sentiment"] == label["sentiment"]
         pred_rh: bool = pred.get("requires_human", False)
         label_rh: bool = label["requires_human"]
+
+        conf = pred.get("confidence")
+        if isinstance(conf, (int, float)):
+            (conf_correct if i_match else conf_wrong).append(float(conf))
 
         intent_hits += int(i_match)
         urgency_hits += int(u_match)
@@ -68,6 +75,8 @@ def score(predictions: list[dict], labels: list[dict]) -> dict[str, Any]:
     sentiment_acc = sentiment_hits / n
     overall       = (intent_acc + urgency_acc + sentiment_acc + rh_f1) / 4
 
+    avg = lambda xs: round(sum(xs) / len(xs), 3) if xs else None
+
     return {
         "n": n,
         "intent_accuracy":           round(intent_acc, 3),
@@ -79,5 +88,8 @@ def score(predictions: list[dict], labels: list[dict]) -> dict[str, Any]:
         "requires_human_recall":     round(rh_rec, 3),
         "requires_human_f1":         round(rh_f1, 3),
         "overall_score":             round(overall, 3),
+        # calibration: a well-calibrated model is more confident when it is correct
+        "confidence_when_correct":   avg(conf_correct),
+        "confidence_when_wrong":     avg(conf_wrong),
         "per_email":                 per_email,
     }
