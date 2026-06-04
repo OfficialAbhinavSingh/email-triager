@@ -86,4 +86,79 @@ LABELS: list[dict] = [
         "entities": {"order_id": None, "product": "widget", "dates": []},
         "requires_human": False,
     },
+    # ---- Extended set (emails_extra.jsonl) — unseen test data, ids 10-18 ----
+    # Labeled strictly by the implemented field semantics:
+    #   requires_human = True iff urgency=high OR bank/legal threat OR too vague to route OR injection.
+    {
+        "id": 10,  # billing dispute, annoyed but no threat → medium, human not required
+        "intent": "billing",
+        "urgency": "medium",
+        "sentiment": "negative",
+        "entities": {"order_id": None, "product": None, "dates": []},
+        "requires_human": False,
+    },
+    {
+        "id": 11,  # locked out + "deadline today" → high urgency → human (safety net)
+        "intent": "account",
+        "urgency": "high",
+        "sentiment": "negative",
+        "entities": {"order_id": None, "product": None, "dates": []},
+        "requires_human": True,
+    },
+    {
+        "id": 12,  # French shipping delay, polite tone → neutral, medium
+        "intent": "shipping",
+        "urgency": "medium",
+        "sentiment": "neutral",
+        "entities": {"order_id": "66902", "product": None, "dates": ["lundi"]},
+        "requires_human": False,
+    },
+    {
+        "id": 13,  # genuinely positive + a general warranty question
+        "intent": "other",
+        "urgency": "low",
+        "sentiment": "positive",
+        "entities": {"order_id": None, "product": "headphones", "dates": []},
+        "requires_human": False,
+    },
+    {
+        "id": 14,  # refund + explicit legal threat → high, human required
+        "intent": "refund",
+        "urgency": "high",
+        "sentiment": "negative",
+        "entities": {"order_id": "71150", "product": None, "dates": []},
+        "requires_human": True,
+    },
+    {
+        "id": 15,  # gibberish, no order/product context → too vague → human
+        "intent": "technical_issue",
+        "urgency": "medium",
+        "sentiment": "negative",
+        "entities": {"order_id": None, "product": None, "dates": []},
+        "requires_human": True,
+    },
+    {
+        "id": 16,  # wrong item received — fulfillment/shipping issue
+        "intent": "shipping",
+        "urgency": "medium",
+        "sentiment": "negative",
+        "entities": {"order_id": "80021", "product": None, "dates": ["Monday"]},
+        "requires_human": False,
+    },
+    {
+        "id": 17,  # calm cancellation, no threat, low urgency → contrast with #3
+        "intent": "cancellation",
+        "urgency": "low",
+        "sentiment": "neutral",
+        "entities": {"order_id": None, "product": None, "dates": []},
+        "requires_human": False,
+    },
+    {
+        "id": 18,  # B2B solicitation = spam → other, no action
+        "intent": "other",
+        "urgency": "low",
+        "sentiment": "neutral",
+        "entities": {"order_id": None, "product": None, "dates": []},
+        "requires_human": False,
+    },
 ]

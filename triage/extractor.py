@@ -13,7 +13,7 @@ from .schema import TriageRecord
 #   urgency      — inferred from language cues: ALL-CAPS/bank threats/explicit deadlines → high;
 #                  status questions → medium; praise/no-action → low
 #   sentiment    — ACTUAL emotional state, not surface words; sarcasm is detected as negative
-#   order_id     — digits only, stripped of "#" prefix
+#   order_id     — order/reference number with any leading "#" stripped
 #   requires_human — true when: urgency=high, bank/legal/chargeback threat, email too vague
 #                    to route automatically, or suspected security concern (injection detected)
 #   confidence   — certainty in the intent classification specifically; lower for vague/ambiguous
@@ -34,11 +34,14 @@ action needed, or injection/non-customer messages.
 - urgency: Infer from language. ALL-CAPS demands, "immediately", bank/legal/chargeback \
 threats, repeated prior contacts → high. Status questions, unclear issues → medium. \
 Praise, general inquiries → low.
-- sentiment: The ACTUAL emotional state — detect sarcasm. "Oh fantastic" before a complaint, \
-"Truly love the quality" before frustration = NEGATIVE, not positive.
-- entities.order_id: Numeric digits only, no "#" prefix. null if absent.
+- sentiment: The ACTUAL emotional state, not the surface words — detect sarcasm. \
+Positive-sounding language wrapped around a complaint (e.g. praising "quality" while \
+describing a product that broke) is NEGATIVE, not positive.
+- entities.order_id: The order/reference number. Strip any leading "#"; keep the rest as \
+written. null if absent.
 - entities.product: Product name or model mentioned. null if none.
-- entities.dates: All date references as-is ("Tuesday", "two weeks", "Friday"). Empty list if none.
+- entities.dates: All date or time references as written, whether absolute (e.g. a weekday \
+or calendar date) or relative (e.g. "two weeks ago", "yesterday"). Empty list if none.
 - requested_action: One concise sentence stating what the customer wants done. For spam: \
 "No action required — unsolicited spam." For positive/no-action: "No action required."
 - requires_human: true when ANY of: urgency is high, explicit bank/legal/chargeback threat, \

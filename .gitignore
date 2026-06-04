@@ -3,6 +3,7 @@
 
 # generated outputs
 results.jsonl
+results_extra.jsonl
 
 # python
 __pycache__/
