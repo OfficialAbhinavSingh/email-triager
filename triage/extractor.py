@@ -1,16 +1,14 @@
+"""
+Provider-agnostic triage extraction: system prompt, tool schema, and the
+`extract()` entry point. The actual LLM call is delegated to a pluggable
+backend (see llm.py) so any provider/model can be wired in.
+"""
 from __future__ import annotations
-import os
-from pathlib import Path
-import anthropic
-from dotenv import load_dotenv
+
+from .llm import LLMBackend, default_backend
 from .schema import TriageRecord
 
-# Load .env from project root if present
-load_dotenv(Path(__file__).parent.parent / ".env")
-
-_client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-
-# Field semantics documented here — these are our choices where the schema is underspecified:
+# Field semantics — our choices where the assignment schema is underspecified:
 #   intent       — primary intent when multiple exist; secondary goes in requested_action
 #   urgency      — inferred from language cues: ALL-CAPS/bank threats/explicit deadlines → high;
 #                  status questions → medium; praise/no-action → low
@@ -102,27 +100,19 @@ EXTRACTION_TOOL: dict = {
 }
 
 
-def extract(email_text: str) -> TriageRecord:
-    """Extract a TriageRecord from raw email text (subject + body)."""
-    response = _client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=1024,
-        system=SYSTEM_PROMPT,
-        tools=[EXTRACTION_TOOL],
-        tool_choice={"type": "any"},
-        messages=[
-            {
-                "role": "user",
-                "content": (
-                    "Analyze this customer email and extract the triage record.\n\n"
-                    f"<customer_email>\n{email_text}\n</customer_email>"
-                ),
-            }
-        ],
+def build_user_prompt(email_text: str) -> str:
+    """Wrap the untrusted email in delimiters — the structural injection defense."""
+    return (
+        "Analyze this customer email and extract the triage record.\n\n"
+        f"<customer_email>\n{email_text}\n</customer_email>"
     )
 
-    for block in response.content:
-        if block.type == "tool_use" and block.name == "extract_triage":
-            return TriageRecord(**block.input)
 
-    raise RuntimeError(f"Model returned no tool call. Content: {response.content}")
+def extract(email_text: str, backend: LLMBackend | None = None) -> TriageRecord:
+    """Extract a validated TriageRecord from raw email text (subject + body).
+
+    Pass a custom `backend` to use any LLM provider/model; defaults to Anthropic.
+    """
+    backend = backend or default_backend()
+    raw = backend.extract_tool_call(SYSTEM_PROMPT, build_user_prompt(email_text), EXTRACTION_TOOL)
+    return TriageRecord(**raw)
