@@ -17,8 +17,11 @@ from typing import Any, Protocol, runtime_checkable
 
 from dotenv import load_dotenv
 
-# Load .env from project root if present (no-op if absent)
-load_dotenv(Path(__file__).parent.parent / ".env")
+# Load .env from project root if present (no-op if absent).
+# override=True so the project's .env is authoritative — otherwise a stale
+# ANTHROPIC_API_KEY exported in the shell (e.g. an sk-ant-oat01 OAuth token,
+# which the Messages API rejects with 401) would silently shadow the real key.
+load_dotenv(Path(__file__).parent.parent / ".env", override=True)
 
 DEFAULT_MODEL = os.environ.get("LLM_MODEL", "claude-sonnet-4-6")
 
