@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """
 Eval harness: compare results.jsonl against hand-labeled ground truth.
-Usage: python run_eval.py
+
+Usage:
+    python run_eval.py                      # reads results.jsonl
+    python run_eval.py --results out.jsonl
 """
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -12,9 +16,13 @@ from eval.metrics import score
 
 
 def main() -> None:
-    results_path = Path("results.jsonl")
+    parser = argparse.ArgumentParser(description="Score triage results against hand labels.")
+    parser.add_argument("--results", default="results.jsonl", help="JSONL produced by process_dataset.py")
+    args = parser.parse_args()
+
+    results_path = Path(args.results)
     if not results_path.exists():
-        sys.exit("results.jsonl not found. Run: python process_dataset.py")
+        sys.exit(f"{results_path} not found. Run: python process_dataset.py")
 
     raw = [json.loads(line) for line in results_path.read_text().splitlines() if line.strip()]
     errors = [r for r in raw if "error" in r]
@@ -54,6 +62,13 @@ def main() -> None:
     print(f"  Precision:            {s['requires_human_precision']:.0%}")
     print(f"  Recall:               {s['requires_human_recall']:.0%}")
     print(f"  F1:                   {s['requires_human_f1']:.0%}")
+    print(f"\nConfidence calibration:")
+    cwc, cww = s["confidence_when_correct"], s["confidence_when_wrong"]
+    print(f"  Avg confidence when intent CORRECT: {cwc if cwc is not None else 'n/a'}")
+    print(f"  Avg confidence when intent WRONG:   {cww if cww is not None else 'n/a'}")
+    if cwc is not None and cww is not None:
+        verdict = "well-calibrated" if cwc > cww else "MISCALIBRATED (overconfident on errors)"
+        print(f"  → {verdict}")
     print(f"\nOverall score:          {s['overall_score']:.0%}  (avg of intent/urgency/sentiment acc + F1)")
     print(f"\n{'─' * W}")
     print("Per-email breakdown:")
