@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 """
-Eval harness: compare results.jsonl against hand-labeled ground truth.
+Eval harness: compare results.jsonl against ground-truth labels.
+
+Works on ANY dataset: the labels can come from the built-in set or from an
+external JSONL file (so a recruiter can drop in their own emails + labels).
+The harness scores exactly the emails that appear in BOTH results and labels,
+and explicitly reports anything it had to skip — no silent truncation.
 
 Usage:
-    python run_eval.py                      # reads results.jsonl
+    python run_eval.py                                  # results.jsonl vs built-in labels
     python run_eval.py --results out.jsonl
+    python run_eval.py --results out.jsonl --labels my_labels.jsonl
 """
 import argparse
 import json
@@ -15,15 +21,27 @@ from eval.labels import LABELS
 from eval.metrics import score
 
 
+def load_labels(path: str | None) -> list[dict]:
+    """Built-in labels by default, or a JSONL file (one label record per line)."""
+    if not path:
+        return LABELS
+    p = Path(path)
+    if not p.exists():
+        sys.exit(f"Labels file not found: {p}")
+    return [json.loads(line) for line in p.read_text().splitlines() if line.strip()]
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Score triage results against hand labels.")
+    parser = argparse.ArgumentParser(description="Score triage results against ground-truth labels.")
     parser.add_argument("--results", default="results.jsonl", help="JSONL produced by process_dataset.py")
+    parser.add_argument("--labels", default=None, help="optional external labels JSONL (default: built-in)")
     args = parser.parse_args()
 
     results_path = Path(args.results)
     if not results_path.exists():
         sys.exit(f"{results_path} not found. Run: python process_dataset.py")
 
+    labels = load_labels(args.labels)
     raw = [json.loads(line) for line in results_path.read_text().splitlines() if line.strip()]
     errors = [r for r in raw if "error" in r]
     predictions = [r for r in raw if "error" not in r]
@@ -31,18 +49,26 @@ def main() -> None:
     if errors:
         print(f"Warning: {len(errors)} email(s) had extraction errors (excluded from eval):")
         for e in errors:
-            print(f"  id={e['id']} subject={e['subject']!r}: {e['error']}")
+            print(f"  id={e['id']} subject={e.get('subject')!r}: {e['error']}")
         print()
 
-    label_map = {l["id"]: l for l in LABELS}
+    label_map = {l["id"]: l for l in labels}
+    pred_ids = {p["id"] for p in predictions}
     aligned_preds, aligned_labels = [], []
     for pred in sorted(predictions, key=lambda x: x["id"]):
         if pred["id"] in label_map:
             aligned_preds.append(pred)
             aligned_labels.append(label_map[pred["id"]])
 
+    # Coverage transparency — what got scored, and what was skipped and why
+    unlabeled = sorted(pred_ids - set(label_map))           # results with no ground truth
+    missing_results = sorted(set(label_map) - pred_ids)     # labels with no result
+
     if not aligned_preds:
-        sys.exit("No valid predictions to evaluate.")
+        sys.exit(
+            f"No overlap between results ({sorted(pred_ids)}) and labels ({sorted(label_map)}). "
+            "Provide labels for these emails via --labels."
+        )
 
     s = score(aligned_preds, aligned_labels)
 
@@ -50,7 +76,12 @@ def main() -> None:
     print("=" * W)
     print("EMAIL TRIAGE — EVAL RESULTS")
     print("=" * W)
-    print(f"\nEmails evaluated: {s['n']} / {len(LABELS)}")
+    print(f"\nResults in file:  {len(predictions)}   Labels available: {len(label_map)}")
+    print(f"Scored (matched): {s['n']}")
+    if unlabeled:
+        print(f"Skipped — no label:   {unlabeled}  (extracted but not in ground truth)")
+    if missing_results:
+        print(f"Labeled but no result: {missing_results}")
     print(f"\nClassification:")
     print(f"  Intent accuracy:      {s['intent_accuracy']:.0%}  ({round(s['intent_accuracy']*s['n'])}/{s['n']})")
     print(f"  Urgency accuracy:     {s['urgency_accuracy']:.0%}  ({round(s['urgency_accuracy']*s['n'])}/{s['n']})")

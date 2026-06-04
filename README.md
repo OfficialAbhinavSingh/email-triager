@@ -18,6 +18,28 @@ python process_dataset.py --input inbox.jsonl --output out.jsonl
 python run_eval.py --results out.jsonl
 ```
 
+## Running on a NEW dataset (the "real checker" flow)
+
+Nothing is dataset-specific. To score a brand-new labeled dataset with no code changes:
+
+```bash
+# 1. extract on any inbox (format: {"id", "subject", "body"} per line)
+python process_dataset.py --input new_emails.jsonl --output new_results.jsonl
+
+# 2. score against an external ground-truth file (same schema as eval/labels.jsonl)
+python run_eval.py --results new_results.jsonl --labels new_labels.jsonl
+```
+
+The harness scores exactly the emails present in **both** files and prints what it
+skipped (extracted-but-unlabeled, or labeled-but-no-result) — no silent truncation.
+`eval/labels.jsonl` is the format template.
+
+**On determinism:** the backend runs at `temperature=0`, so the same email always
+yields the same triage record. That is intentional for an extraction task (reproducible,
+auditable) — it is *not* a cached or hardcoded result. Change the email text and the
+output changes accordingly; every field (intent, entities, order IDs) is produced live
+by the model from the input.
+
 ## Wiring in your own LLM provider
 
 The LLM call sits behind a one-method interface (`triage/llm.py`), so nothing

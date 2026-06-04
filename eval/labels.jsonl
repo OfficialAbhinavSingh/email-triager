@@ -1,0 +1,18 @@
+{"id": 1, "intent": "shipping", "urgency": "medium", "sentiment": "negative", "entities": {"order_id": "48213", "product": null, "dates": ["Tuesday", "Friday"]}, "requires_human": false}
+{"id": 2, "intent": "refund", "urgency": "low", "sentiment": "neutral", "entities": {"order_id": "51902", "product": "blender", "dates": []}, "requires_human": false}
+{"id": 3, "intent": "cancellation", "urgency": "high", "sentiment": "negative", "entities": {"order_id": null, "product": null, "dates": []}, "requires_human": true}
+{"id": 4, "intent": "technical_issue", "urgency": "high", "sentiment": "negative", "entities": {"order_id": null, "product": null, "dates": []}, "requires_human": true}
+{"id": 5, "intent": "other", "urgency": "low", "sentiment": "neutral", "entities": {"order_id": null, "product": null, "dates": []}, "requires_human": true}
+{"id": 6, "intent": "other", "urgency": "low", "sentiment": "positive", "entities": {"order_id": null, "product": null, "dates": []}, "requires_human": false}
+{"id": 7, "intent": "shipping", "urgency": "medium", "sentiment": "negative", "entities": {"order_id": "33410", "product": null, "dates": []}, "requires_human": false}
+{"id": 8, "intent": "other", "urgency": "low", "sentiment": "positive", "entities": {"order_id": null, "product": null, "dates": []}, "requires_human": false}
+{"id": 9, "intent": "technical_issue", "urgency": "medium", "sentiment": "negative", "entities": {"order_id": null, "product": "widget", "dates": []}, "requires_human": false}
+{"id": 10, "intent": "billing", "urgency": "medium", "sentiment": "negative", "entities": {"order_id": null, "product": null, "dates": []}, "requires_human": false}
+{"id": 11, "intent": "account", "urgency": "high", "sentiment": "negative", "entities": {"order_id": null, "product": null, "dates": []}, "requires_human": true}
+{"id": 12, "intent": "shipping", "urgency": "medium", "sentiment": "neutral", "entities": {"order_id": "66902", "product": null, "dates": ["lundi"]}, "requires_human": false}
+{"id": 13, "intent": "other", "urgency": "low", "sentiment": "positive", "entities": {"order_id": null, "product": "headphones", "dates": []}, "requires_human": false}
+{"id": 14, "intent": "refund", "urgency": "high", "sentiment": "negative", "entities": {"order_id": "71150", "product": null, "dates": []}, "requires_human": true}
+{"id": 15, "intent": "technical_issue", "urgency": "medium", "sentiment": "negative", "entities": {"order_id": null, "product": null, "dates": []}, "requires_human": true}
+{"id": 16, "intent": "shipping", "urgency": "medium", "sentiment": "negative", "entities": {"order_id": "80021", "product": null, "dates": ["Monday"]}, "requires_human": false}
+{"id": 17, "intent": "cancellation", "urgency": "low", "sentiment": "neutral", "entities": {"order_id": null, "product": null, "dates": []}, "requires_human": false}
+{"id": 18, "intent": "other", "urgency": "low", "sentiment": "neutral", "entities": {"order_id": null, "product": null, "dates": []}, "requires_human": false}

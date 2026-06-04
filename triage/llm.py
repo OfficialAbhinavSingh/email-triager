@@ -44,13 +44,17 @@ class AnthropicBackend:
     so nothing is hardcoded — set LLM_MODEL to point at any Claude model.
     """
 
-    def __init__(self, model: str | None = None, max_retries: int = 1, max_tokens: int = 1024):
+    def __init__(self, model: str | None = None, max_retries: int = 1, max_tokens: int = 1024,
+                 temperature: float = 0.0):
         import anthropic  # imported lazily so the package imports without the SDK present
 
         self._client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
         self.model = model or DEFAULT_MODEL
         self.max_retries = max_retries
         self.max_tokens = max_tokens
+        # temperature=0 → same email yields the same triage. This is by design for an
+        # extraction task (reproducible, auditable); it is NOT a cached/canned result.
+        self.temperature = temperature
 
     def extract_tool_call(self, system: str, user: str, tool: dict) -> dict[str, Any]:
         last_exc: Exception | None = None
@@ -59,6 +63,7 @@ class AnthropicBackend:
                 response = self._client.messages.create(
                     model=self.model,
                     max_tokens=self.max_tokens,
+                    temperature=self.temperature,
                     system=system,
                     tools=[tool],
                     tool_choice={"type": "tool", "name": tool["name"]},
